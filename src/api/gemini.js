@@ -1,0 +1,52 @@
+const API_KEY = "AIzaSyBOeIjhB0sVTmpWTgmaOjm_c8zk0fhezF0"; // 🔴 replace after regenerating
+
+const MODEL = "gemini-2.5-flash";
+
+export const askGemini = async (prompt, retry = 0) => {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: prompt }],
+            },
+          ],
+        }),
+      },
+    );
+
+    const data = await res.json();
+
+    console.log("Gemini response:", data);
+
+    // 🔁 Retry if model overloaded
+    if (!res.ok) {
+      const msg = data?.error?.message || "";
+
+      if (msg.toLowerCase().includes("high demand") && retry < 2) {
+        await new Promise((r) => setTimeout(r, 1500));
+        return askGemini(prompt, retry + 1);
+      }
+
+      return `❌ API Error: ${msg}`;
+    }
+
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      return "⚠️ No response from Gemini";
+    }
+
+    return text;
+  } catch (err) {
+    console.error(err);
+    return "❌ Network error";
+  }
+};

@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* body default style */
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  background: #fff8e7;
+}
+
+/* heading font */
+.heading-font {
+  font-family: "Playfair Display", serif;
+}
