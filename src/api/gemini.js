@@ -5,7 +5,7 @@ const MODEL = "gemini-2.5-flash";
 export const askGemini = async (prompt, retry = 0) => {
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
       {
         method: "POST",
         headers: {
