@@ -1,11 +1,14 @@
-const API_KEY = import.meta.env.GEMINI_API2; // 🔴 replace after regenerating
+const API_KEY = import.meta.env.VITE_GEMINI_API2;
 
-const MODEL = "gemini-2.5-flash";
+const PRIMARY_MODEL = "gemini-2.5-flash";
+const FALLBACK_MODEL = "gemini-2.0-flash";
 
-export const askGemini = async (prompt, retry = 0) => {
+export const askGemini = async (prompt, retry = 0, useFallback = false) => {
   try {
+    const model = useFallback ? FALLBACK_MODEL : PRIMARY_MODEL;
+
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -26,13 +29,24 @@ export const askGemini = async (prompt, retry = 0) => {
 
     console.log("Gemini response:", data);
 
-    // 🔁 Retry if model overloaded
+    // Handle API errors
     if (!res.ok) {
       const msg = data?.error?.message || "";
 
-      if (msg.toLowerCase().includes("high demand") && retry < 2) {
+      console.log("API Error:", msg);
+
+      // Switch to fallback model if overloaded
+      if (msg.toLowerCase().includes("high demand") && !useFallback) {
+        console.log("Switching to fallback model...");
+
+        return askGemini(prompt, 0, true);
+      }
+
+      // Retry request
+      if (retry < 2) {
         await new Promise((r) => setTimeout(r, 1500));
-        return askGemini(prompt, retry + 1);
+
+        return askGemini(prompt, retry + 1, useFallback);
       }
 
       return `❌ API Error: ${msg}`;
@@ -46,7 +60,7 @@ export const askGemini = async (prompt, retry = 0) => {
 
     return text;
   } catch (err) {
-    console.error(err);
+    console.error("Gemini Error:", err);
     return "❌ Network error";
   }
 };
